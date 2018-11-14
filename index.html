@@ -1,0 +1,72 @@
+<!DOCTYPE xhtml>
+<html lang="pt-BR">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content=""/>
+        <meta name="author" content="Spume.co"/>
+        <script type="text/javascript" src="spu.js"></script>
+        <title>VALIDATE URLS</title>
+    </head>
+    <body style="font-size:14px;padding:0;margin:0;text-align: center">
+        <textarea style="float:left;width:44vw;height:40vh;text-align:left"></textarea>
+        <input type="button" style="width:10vw;float:left;padding:1rem" value="check">
+        <div style="width:45%;float:left;border:1px solid;height:40vh;text-align: left"></div>
+        <div style="width:100vw;line-height:10vh;text-align:center;font-size:2rem">
+            <label style="padding:0 1rem;">0</label><=><label style="padding:0 1rem;font-weight:bolder">0</label>
+        </div>
+        <textarea style="float:left;width:49vw;height:40vh;text-align:left;border: 2px solid green"></textarea>
+        <textarea style="float:right;width:49vw;height:40vh;text-align:left;border: 2px solid red"></textarea>
+    </body>
+    <script>
+        let
+        /*
+         * a similar function under spu.js exists, 
+         * but it is framework's dependant, so I've 
+         * choosed to create a new one.
+         */
+        call = function(url, args=null, fn=false, sync=false) {
+            var
+            xhr = new XMLHttpRequest();
+            if(!sync&&fn){
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState == 4) {
+                        fn({ status: xhr.status, data: xhr.responseText.trim(), url:url, args:args });
+                    };
+                }
+            }
+            xhr.open("POST", url, !sync);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.send(JSON.stringify(args));
+            if(sync) {
+                let
+                o = { status: xhr.status, data: xhr.responseText.trim(), url:url, args:args };
+                return (fn ? fn(o) : o);
+            }
+        };
+        spu.get("input").first().onclick = function(){
+            spu.get("textarea")[1].value = "";
+            spu.get("textarea")[2].value = "";
+            spu.get("label")[0].innserText = "0";
+            spu.get("label")[1].innserText = "0";
+            spu.get("div")[0].innerText = "";
+            var
+            list = spu.get("textarea")[0].value.split(/[\n+\s+]/g);
+            var
+            tgt = spu.get('label')[0];
+            list.each(function(el){ if(el) tgt.innerText = parseInt(tgt.innerText)+1; });
+            list.each(function(el){
+                if(!el) return
+                call("controller.php",{url:el},function(el){
+                    el = JSON.parse(el.data);
+                    spu.get("div").first().innerHTML = spu.get("div").first().innerHTML + el.url + " => " + el.status + "<br>";
+                    if(el.status == "pass") spu.get("textarea")[1].value = spu.get("textarea")[1].value + el.url + "\n";
+                    else spu.get("textarea")[2].value = spu.get("textarea")[2].value + el.url + "\n";
+                    var
+                    tgt = spu.get('label')[1];
+                    tgt.innerText = parseInt(tgt.innerText)+1;
+                });
+            });
+        }
+    </script>
+</html>
